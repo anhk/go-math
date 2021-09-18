@@ -11,6 +11,8 @@ type CUSUM struct {
 
 // NewCUSUM
 // - mean: 算术平均数
+// - sigma: 标准差
+// - weight: 权重，误差
 func NewCUSUM(mean, sigma, weight float64) *CUSUM {
 	if sigma == 0 {
 		return nil
