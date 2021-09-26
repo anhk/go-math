@@ -9,6 +9,9 @@ import (
  * 聚类算法-kmeans with Distance(Euclidean)
  */
 
+/**
+ * 点
+ */
 type Point struct {
 	X, Y float64
 }
@@ -23,8 +26,8 @@ func (p Point) DistanceTo(t Point) float64 {
 	return math.Sqrt(math.Pow(t.X-p.X, 2) + math.Pow(t.Y-p.Y, 2))
 }
 
-func (p Point) Equals(x float64, y float64) bool {
-	return almostEqual(p.X, x) && almostEqual(p.Y, y)
+func (p Point) Equals(point Point) bool {
+	return almostEqual(p.X, point.X) && almostEqual(p.Y, point.Y)
 }
 
 type KMeans struct {
@@ -32,6 +35,7 @@ type KMeans struct {
 	clusters []Cluster
 }
 
+// 聚类结果
 type Cluster struct {
 	Centroide Point   // 中心点
 	Points    []Point // 聚类内的点
@@ -41,6 +45,18 @@ type Cluster struct {
 
 func (c *Cluster) addPoint(v Point) {
 	c.Points = append(c.Points, v)
+}
+
+// calcNewCentroide: 求均值，作为新的质心点
+func (c *Cluster) calcNewCentroide() Point {
+	var x, y, sumX, sumY float64
+	for _, v := range c.Points {
+		sumX += v.X
+		sumY += v.Y
+	}
+	x = sumX / float64(len(c.Points))
+	y = sumY / float64(len(c.Points))
+	return Point{X: x, Y: y}
 }
 
 func NewKMeans(k int) *KMeans {
@@ -125,17 +141,11 @@ func (k *KMeans) recalcularCentroides() {
 		}
 
 		// 求均值，作为新的质心点
-		var x, y, sumX, sumY float64
-		for _, v := range k.clusters[i].Points {
-			sumX += v.X
-			sumY += v.Y
-		}
-		x = sumX / float64(len(k.clusters[i].Points))
-		y = sumY / float64(len(k.clusters[i].Points))
-		if k.clusters[i].Centroide.Equals(x, y) {
+		newCentroide := k.clusters[i].calcNewCentroide()
+		if k.clusters[i].Centroide.Equals(newCentroide) {
 			k.clusters[i].isConvergence = true
 		} else {
-			k.clusters[i].Centroide = Point{X: x, Y: y}
+			k.clusters[i].Centroide = newCentroide
 		}
 	}
 }
