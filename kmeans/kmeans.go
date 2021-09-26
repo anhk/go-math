@@ -33,9 +33,10 @@ type KMeans struct {
 }
 
 type Cluster struct {
-	centroide     Point // 中心点
-	isConvergence bool
-	Points        []Point // 聚类内的点
+	Centroide Point   // 中心点
+	Points    []Point // 聚类内的点
+
+	isConvergence bool // 是否完成聚类收敛
 }
 
 func (c *Cluster) addPoint(v Point) {
@@ -67,7 +68,7 @@ func (k *KMeans) initCentroides(points []Point) {
 	for i := 0; i < k.k; i++ {
 		x := rand.Float64()*(maxX-minX) + minX
 		y := rand.Float64()*(maxY-minY) + minY
-		k.clusters[i].centroide = Point{X: x, Y: y}
+		k.clusters[i].Centroide = Point{X: x, Y: y}
 	}
 }
 
@@ -105,7 +106,7 @@ func (k *KMeans) classifyPoint(points []Point) {
 		masCercano := 0
 		minDistancia := math.MaxFloat64
 		for i := 0; i < k.k; i++ {
-			distancia := v.DistanceTo(k.clusters[i].centroide)
+			distancia := v.DistanceTo(k.clusters[i].Centroide)
 			if minDistancia > distancia {
 				minDistancia = distancia
 				masCercano = i
@@ -131,10 +132,10 @@ func (k *KMeans) recalcularCentroides() {
 		}
 		x = sumX / float64(len(k.clusters[i].Points))
 		y = sumY / float64(len(k.clusters[i].Points))
-		if k.clusters[i].centroide.Equals(x, y) {
+		if k.clusters[i].Centroide.Equals(x, y) {
 			k.clusters[i].isConvergence = true
 		} else {
-			k.clusters[i].centroide = Point{X: x, Y: y}
+			k.clusters[i].Centroide = Point{X: x, Y: y}
 		}
 	}
 }

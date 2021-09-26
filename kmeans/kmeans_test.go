@@ -14,12 +14,12 @@ func TestKMeans(t *testing.T) {
 	k := NewKMeans(4)
 	c := k.Run(P)
 	for _, cc := range c {
-		fmt.Println(cc.centroide, cc.Points)
+		fmt.Println(cc.Centroide, cc.Points)
 	}
 
 	fmt.Println("++++")
 	c2 := k.Run(Q)
 	for _, cc := range c2 {
-		fmt.Println(cc.centroide, cc.Points)
+		fmt.Println(cc.Centroide, cc.Points)
 	}
 }
