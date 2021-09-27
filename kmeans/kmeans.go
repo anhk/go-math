@@ -13,7 +13,7 @@ import (
  * 点
  */
 type Point struct {
-	X, Y float64
+	M []float64
 }
 
 const float64EqualityThreshold = 1e-9
@@ -23,11 +23,51 @@ func almostEqual(a, b float64) bool {
 }
 
 func (p Point) DistanceTo(t Point) float64 {
-	return math.Sqrt(math.Pow(t.X-p.X, 2) + math.Pow(t.Y-p.Y, 2))
+	if len(t.M) != len(p.M) {
+		return 0
+	}
+	var sum float64
+	for i := range t.M {
+		sum += math.Pow(t.M[i]-p.M[i], 2)
+	}
+	return math.Sqrt(sum)
 }
 
 func (p Point) Equals(point Point) bool {
-	return almostEqual(p.X, point.X) && almostEqual(p.Y, point.Y)
+	if len(point.M) != len(p.M) {
+		return false
+	}
+	for i := range p.M {
+		if !almostEqual(p.M[i], point.M[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// Add
+func (p Point) Add(v Point) {
+	for i := range v.M {
+		p.M[i] += v.M[i]
+	}
+}
+
+func (p Point) Div(d int) {
+	for i := range p.M {
+		p.M[i] /= float64(d)
+	}
+}
+
+func (p Point) calcMax(v Point) {
+	for i := range p.M {
+		p.M[i] = math.Max(p.M[i], v.M[i])
+	}
+}
+
+func (p Point) calcMin(v Point) {
+	for i := range p.M {
+		p.M[i] = math.Min(p.M[i], v.M[i])
+	}
 }
 
 type KMeans struct {
@@ -49,14 +89,12 @@ func (c *Cluster) addPoint(v Point) {
 
 // calcNewCentroide: 求均值，作为新的质心点
 func (c *Cluster) calcNewCentroide() Point {
-	var x, y, sumX, sumY float64
+	newCentroide := newZeroPoint(len(c.Centroide.M))
 	for _, v := range c.Points {
-		sumX += v.X
-		sumY += v.Y
+		newCentroide.Add(v)
 	}
-	x = sumX / float64(len(c.Points))
-	y = sumY / float64(len(c.Points))
-	return Point{X: x, Y: y}
+	newCentroide.Div(len(c.Points))
+	return newCentroide
 }
 
 func NewKMeans(k int) *KMeans {
@@ -66,26 +104,46 @@ func NewKMeans(k int) *KMeans {
 // initCentroides: 初始化k个质心点
 func (k *KMeans) initCentroides(points []Point) {
 	k.clusters = make([]Cluster, k.k)
+	dimension := len(points[0].M)
 
-	// 找到数据集的范围
-	maxX := math.SmallestNonzeroFloat64
-	maxY := math.SmallestNonzeroFloat64
-	minX := math.MaxFloat64
-	minY := math.MaxFloat64
+	max := newMinPoint(dimension)
+	min := newMaxPoint(dimension)
 
 	for _, v := range points {
-		maxX = math.Max(maxX, v.X)
-		maxY = math.Max(maxY, v.Y)
-		minX = math.Min(minX, v.X)
-		minY = math.Min(minY, v.Y)
+		max.calcMax(v)
+		min.calcMin(v)
 	}
-
-	// 在范围内随机初始化k个中心点
 	for i := 0; i < k.k; i++ {
-		x := rand.Float64()*(maxX-minX) + minX
-		y := rand.Float64()*(maxY-minY) + minY
-		k.clusters[i].Centroide = Point{X: x, Y: y}
+		k.clusters[i].Centroide = randomBetween(min, max)
 	}
+}
+
+func randomBetween(min Point, max Point) Point {
+	p := Point{M: make([]float64, len(min.M))}
+	for i := range min.M {
+		p.M[i] = rand.Float64()*(max.M[i]-min.M[i]) + min.M[i]
+	}
+	return p
+}
+
+func newZeroPoint(dimension int) Point {
+	return Point{M: make([]float64, dimension)}
+}
+
+func newMaxPoint(dimension int) Point {
+	p := Point{M: make([]float64, dimension)}
+	for i := range p.M {
+		p.M[i] = math.MaxFloat64
+	}
+	return p
+}
+
+func newMinPoint(dimension int) Point {
+	p := Point{M: make([]float64, dimension)}
+	for i := range p.M {
+		p.M[i] = math.SmallestNonzeroFloat64
+	}
+	return p
 }
 
 // isConvergence: 是否收敛
@@ -99,6 +157,17 @@ func (k *KMeans) isConvergence() bool {
 }
 
 func (k *KMeans) Run(points []Point) []Cluster {
+	if len(points) == 0 {
+		return nil
+	}
+	// 检查所有点维度是否相同
+	dimension := len(points[0].M)
+	for _, v := range points {
+		if dimension != len(v.M) {
+			return nil
+		}
+	}
+
 	k.initCentroides(points)
 	for !k.isConvergence() {
 		k.initCluster()          // 重置分类中的点
