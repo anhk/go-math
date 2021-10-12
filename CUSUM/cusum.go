@@ -27,6 +27,7 @@ func max(a, b float64) float64 {
 	return b
 }
 
+// Add
 func (c *CUSUM) Add(x ...float64) {
 	for _, d := range x {
 		z := (d - c.mean) / c.sigma
@@ -35,6 +36,13 @@ func (c *CUSUM) Add(x ...float64) {
 	}
 }
 
+// Reset
+func (c *CUSUM) Reset() {
+	c.resultH = 0
+	c.resultL = 0
+}
+
+// Result
 func (c *CUSUM) Result() (float64, float64) {
 	return c.resultH, c.resultL
 }
